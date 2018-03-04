@@ -1,0 +1,22 @@
+ARG ARCH=frommakefile
+ARG DOCKERSRC=frommakefile
+ARG USERNAME=frommakefile
+#
+FROM ${USERNAME}/${DOCKERSRC}:${ARCH}
+#
+ARG PUID=1000
+ARG PGID=1000
+#
+RUN set -xe \
+    && addgroup -g ${PGID} -S transmission \
+    && adduser -u ${PUID} -G transmission -h /var/lib/transmission -D transmission \
+    && apk add --no-cache --purge -uU transmission-daemon tzdata \
+    && rm -rf /var/cache/apk/* /tmp/* /var/lib/transmission/config/*
+#
+COPY root/ /
+#
+VOLUME /var/lib/transmission/config/ /var/lib/transmission/downloads/ /var/lib/transmission/incomplete/ /var/lib/transmission/torrents/
+#
+EXPOSE 9091 52437 52437/udp
+#
+ENTRYPOINT ["/init"]

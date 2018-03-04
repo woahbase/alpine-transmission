@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv bash
+
+if [ -r /var/lib/transmission/config/settings.json ];
+then
+    echo "Found pre-existing Transmission settings.";
+else
+    echo "Copying default Transmission settings.";
+    cp /defaults/settings.json /var/lib/transmission/config/settings.json;
+    cp /defaults/stats.json /var/lib/transmission/config/stats.json;
+fi;
+
+chown -R transmission:users \
+    /var/lib/transmission/config \
+    /var/lib/transmission/torrents \
+    /var/lib/transmission/incomplete \
+    /var/lib/transmission/downloads
