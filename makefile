@@ -42,7 +42,7 @@ OTHERFLAGS := # -v /etc/hosts:/etc/hosts:ro -v /etc/localtime:/etc/localtime:ro 
 PORTFLAGS  := -p 9091:9091 -p 52437:52437 -p 52437:52437/udp
 PROXYFLAGS := --build-arg http_proxy=$(http_proxy) --build-arg https_proxy=$(https_proxy) --build-arg no_proxy=$(no_proxy)
 
-RUNFLAGS   := -c 256 -m 256m -e PGID=$(PGID) -e PUID=$(PUID)
+RUNFLAGS   := -c 256 -m 512m -e PGID=$(PGID) -e PUID=$(PUID)
 
 # -- }}}
 
