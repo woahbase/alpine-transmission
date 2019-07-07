@@ -1,8 +1,6 @@
-ARG ARCH=frommakefile
 ARG DOCKERSRC=frommakefile
-ARG USERNAME=frommakefile
 #
-FROM ${USERNAME}/${DOCKERSRC}:${ARCH}
+FROM ${DOCKERSRC}
 #
 ARG PUID=1000
 ARG PGID=1000
@@ -10,7 +8,7 @@ ARG PGID=1000
 RUN set -xe \
     && addgroup -g ${PGID} -S transmission \
     && adduser -u ${PUID} -G transmission -h /var/lib/transmission -D transmission \
-    && apk add --no-cache --purge -uU transmission-daemon tzdata \
+    && apk add --no-cache --purge -uU transmission-daemon transmission-cli tzdata \
     && rm -rf /var/cache/apk/* /tmp/* /var/lib/transmission/config/*
 #
 COPY root/ /
