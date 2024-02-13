@@ -1,3 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-s6-setuidgid transmission /usr/bin/transmission-daemon --foreground --no-portmap --log-error --config-dir /var/lib/transmission/config

@@ -1,0 +1,9 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+TRANSMISSION_ARGS="${TRANSMISSION_ARGS:- --foreground --no-portmap --log-level=error}";
+
+s6-setuidgid ${S6_USER:-alpine} exec \
+    /usr/bin/transmission-daemon \
+    --config-dir /var/lib/transmission/config \
+    ${TRANSMISSION_ARGS}
