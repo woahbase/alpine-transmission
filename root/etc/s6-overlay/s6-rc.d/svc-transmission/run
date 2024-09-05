@@ -1,9 +1,15 @@
 #!/usr/bin/with-contenv bash
 set -e
 
+TRANSMISSION_ROOTDIR="${TRANSMISSION_ROOTDIR:-/var/lib/transmission}";
+TRANSMISSION_CONFDIR="${TRANSMISSION_CONFDIR:-$TRANSMISSION_ROOTDIR/config}";
 TRANSMISSION_ARGS="${TRANSMISSION_ARGS:- --foreground --no-portmap --log-level=error}";
 
-s6-setuidgid ${S6_USER:-alpine} exec \
+cd ${TRANSMISSION_ROOTDIR} || exit 1; # must exist
+
+s6-setuidgid ${S6_USER:-alpine} \
+exec \
     /usr/bin/transmission-daemon \
-    --config-dir /var/lib/transmission/config \
-    ${TRANSMISSION_ARGS}
+    --config-dir ${TRANSMISSION_CONFDIR} \
+    ${TRANSMISSION_ARGS} \
+    ;

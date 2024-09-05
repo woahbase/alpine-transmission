@@ -1,32 +1,63 @@
 #!/usr/bin/with-contenv bash
 set -e
 
+vecho () { if [ "${S6_VERBOSITY:-1}" -gt 0 ]; then echo "[$0] $@"; fi; }
+
+TRANSMISSION_ROOTDIR="${TRANSMISSION_ROOTDIR:-/var/lib/transmission}";
+TRANSMISSION_CONFDIR="${TRANSMISSION_CONFDIR:-$TRANSMISSION_ROOTDIR/config}";
+TRANSMISSION_DOWNLOADDIR="${TRANSMISSION_DOWNLOADDIR:-$TRANSMISSION_ROOTDIR/downloads}";
+TRANSMISSION_INCOMPLETEDIR="${TRANSMISSION_INCOMPLETEDIR:-$TRANSMISSION_ROOTDIR/incomplete}";
+TRANSMISSION_WATCHDIR="${TRANSMISSION_WATCHDIR:-$TRANSMISSION_ROOTDIR/torrents}"; # not the same as ${TRANSMISSION_CONFDIR}/torrents
+
+vecho "Ensure configuration directories exist.";
 mkdir -p \
-    /var/lib/transmission \
-    /var/lib/transmission/config \
-    /var/lib/transmission/downloads \
-    /var/lib/transmission/incomplete \
-    /var/lib/transmission/torrents \
+    ${TRANSMISSION_ROOTDIR} \
+    ${TRANSMISSION_CONFDIR} \
+    ${TRANSMISSION_CONFDIR}/blocklists \
+    ${TRANSMISSION_CONFDIR}/resume \
+    ${TRANSMISSION_CONFDIR}/torrents \
+    ${TRANSMISSION_DOWNLOADDIR} \
+    ${TRANSMISSION_INCOMPLETEDIR} \
+    ${TRANSMISSION_WATCHDIR} \
     ;
 
 # ensure conf json exists
-if [ -r /var/lib/transmission/config/settings.json ];
+if [ ! -e "${TRANSMISSION_CONFDIR}/settings.json" ];
 then
-    echo "Found pre-existing Transmission settings.";
-else
-    echo "Copying default Transmission settings.";
-    cp /defaults/settings.json /var/lib/transmission/config/settings.json;
-    cp /defaults/stats.json /var/lib/transmission/config/stats.json;
+    vecho "Setting up default Transmission settings at ${TRANSMISSION_CONFDIR}/settings.json";
+    # cp /defaults/settings.json ${TRANSMISSION_CONFDIR}/settings.json;
+    sed \
+        -e "s|TRANSMISSION_DOWNLOADDIR|$TRANSMISSION_DOWNLOADDIR|g" \
+        -e "s|TRANSMISSION_INCOMPLETEDIR|$TRANSMISSION_INCOMPLETEDIR|g" \
+        -e "s|TRANSMISSION_WATCHDIR|$TRANSMISSION_WATCHDIR|g" \
+        -e "s|TRANSMISSION_RPCURL|${TRANSMISSION_RPCURL:-/transmission/}|g" \
+        /defaults/settings.json > ${TRANSMISSION_CONFDIR}/settings.json;
 fi;
 
-# NEVER run -R on dl locations
+if [ ! -e "${TRANSMISSION_CONFDIR}/stats.json" ];
+then
+    vecho "Copying default Transmission stats at ${TRANSMISSION_CONFDIR}/stats.json";
+    cp /defaults/stats.json ${TRANSMISSION_CONFDIR}/stats.json;
+fi;
+
+vecho "Fixing permissions.";
 chown -R ${S6_USER:-alpine}:${PGID:-1000} \
-    /var/lib/transmission/config \
+    ${TRANSMISSION_CONFDIR} \
     ;
 
 chown ${S6_USER:-alpine}:${PGID:-1000} \
-    /var/lib/transmission \
-    /var/lib/transmission/downloads \
-    /var/lib/transmission/incomplete \
-    /var/lib/transmission/torrents \
+    ${TRANSMISSION_ROOTDIR} \
+    ${TRANSMISSION_DOWNLOADDIR} \
+    ${TRANSMISSION_INCOMPLETEDIR} \
+    ${TRANSMISSION_WATCHDIR} \
     ;
+
+if [ -n "${TRANSMISSION_PERMFIX_FILES}" ]; # may become cumbersome if run on large number of files
+then
+    vecho "Fixing permissions on downloaded files.";
+    find ${TRANSMISSION_DOWNLOADDIR} ${TRANSMISSION_INCOMPLETEDIR} ${TRANSMISSION_WATCHDIR} \
+        \! -user ${S6_USER:-alpine} -exec \
+        chown --no-dereference \
+        ${S6_USER:-alpine}:${PGID:-1000} \
+        '{}' +;
+fi;
